@@ -6,6 +6,11 @@ import {
 } from "../../redux/services/PostApi";
 import { useGetUsersQuery } from "../../redux/services/UserApi";
 import toast from "react-hot-toast";
+import Post from "./Post";
+import SearchBar from "../common/SearchBar";
+import UserFilterDropdown from "./UserFilterDropdown";
+import AddPostForm from "./AddPostForm";
+import Pagination from "./Pagination";
 
 const PostList = () => {
   const { data: fetchedPosts, error, isLoading } = useGetPostsQuery();
@@ -22,16 +27,10 @@ const PostList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
   const [showDetailsId, setShowDetailsId] = useState(null);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [showAddPost, setShowAddPost] = useState(false);
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 5;
-
-  // Limit the number of page buttons to display at once
-  const maxPageButtons = 5;
 
   useEffect(() => {
     if (fetchedPosts) {
@@ -97,28 +96,12 @@ const PostList = () => {
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Create a dynamic list of visible page numbers
-  const getPageNumbers = () => {
-    const startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
-    const endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
-    const pages = [];
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    return pages;
-  };
-
   // Function to add a new post
-  const handleAddPost = async () => {
+  const handleAddPost = async ({ title, body }) => {
     try {
       // Add the new post
       const newPost = await addPost({ title, body }).unwrap();
 
-      // Reset input fields and close the form
-      setTitle("");
-      setBody("");
       setShowAddPost(false);
 
       // Add the new post to the beginning of both posts and filteredPosts
@@ -145,69 +128,22 @@ const PostList = () => {
   return (
     <div className="p-4">
       <div className="mb-4 w-full flex justify-between place-items-center">
-        <input
-          type="text"
-          placeholder="Search by title or body"
-          className="w-[60%] p-2 border rounded"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+        <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        <UserFilterDropdown
+          users={users}
+          filterPostsByUser={filterPostsByUser}
         />
-
-        <div className="relative w-[40%] flex flex-col">
-          <button
-            className="w-full h-full p-2 border rounded ml-2"
-            onClick={() => {
-              filterPostsByUser("");
-              setShowDropdown(!showDropdown);
-            }}
-          >
-            All Users
-          </button>
-
-          {showDropdown && (
-            <div className="absolute top-10 w-full ml-2 py-2 rounded-b border bg-black">
-              {users?.map((user) => (
-                <button
-                  className="w-full h-full p-1"
-                  key={user?.id}
-                  onClick={() => {
-                    filterPostsByUser(user?.id);
-                    setShowDropdown(!showDropdown);
-                  }}
-                >
-                  {user?.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {currentPosts.map((post) => (
-        <div key={post?.id} className="border-t py-2">
-          <h3
-            className="text-md font-medium cursor-pointer"
-            onClick={() => toggleShowDetails(post?.id)}
-          >
-            {post?.title}
-          </h3>
-
-          {showDetailsId === post?.id && (
-            <div className="flex flex-col gap-2 py-1">
-              <p>{post?.body}</p>
-              <p className="text-sm text-green-500">
-                Created by: {getUserName(post?.userId)}
-              </p>
-            </div>
-          )}
-
-          <button
-            className="text-red-500"
-            onClick={() => handleDelete(post?.id)}
-          >
-            Delete
-          </button>
-        </div>
+        <Post
+          key={post.id}
+          post={post}
+          toggleShowDetails={toggleShowDetails}
+          showDetailsId={showDetailsId}
+          getUserName={getUserName}
+          handleDelete={handleDelete}
+        />
       ))}
 
       {/* Add post button */}
@@ -218,64 +154,14 @@ const PostList = () => {
         Add Post
       </button>
 
-      {showAddPost && (
-        <div className="flex flex-col gap-2 mt-4">
-          <input
-            type="text"
-            placeholder="Title"
-            className="p-2 border rounded"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <textarea
-            placeholder="Body"
-            className="p-2 border rounded"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-          />
-          <button
-            className="p-2 bg-green-500 text-white rounded"
-            onClick={handleAddPost}
-          >
-            Post
-          </button>
-        </div>
-      )}
+      {showAddPost && <AddPostForm onAddPost={handleAddPost} />}
 
       {/* Pagination buttons */}
-      <div className="flex justify-center mt-4">
-        <button
-          disabled={currentPage === 1}
-          className="p-2 mx-1 border rounded"
-          onClick={() => handlePageChange(currentPage - 1)}
-        >
-          Previous
-        </button>
-
-        {getPageNumbers().map((page) => (
-          <button
-            key={page}
-            className={`p-2 mx-1 border rounded ${
-              page === currentPage ? "bg-gray-200" : ""
-            }`}
-            onClick={() => handlePageChange(page)}
-          >
-            {page}
-          </button>
-        ))}
-
-        {currentPage < totalPages && totalPages > maxPageButtons && (
-          <span className="p-2 mx-1">...</span>
-        )}
-
-        <button
-          disabled={currentPage === totalPages}
-          className="p-2 mx-1 border rounded"
-          onClick={() => handlePageChange(currentPage + 1)}
-        >
-          Next
-        </button>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 };

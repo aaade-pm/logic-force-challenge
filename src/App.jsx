@@ -10,7 +10,7 @@ function App() {
   return (
     <>
       <div className="w-full flex justify-center place-items-center">
-        <main className="shadow-sm shadow-slate-50 h-full w-full lg:w-1/2 lg:my-5 py-3 px-5">
+        <main className="lg:shadow-sm lg:shadow-slate-50 h-full w-full lg:w-1/2 lg:my-5 py-3 px-5">
           <Toaster position="top-right" />
           <Navbar />
           <Suspense
