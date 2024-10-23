@@ -1,5 +1,6 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
+import toast from "react-hot-toast";
 
 const AddPostForm = ({ onAddPost }) => {
   const [title, setTitle] = useState("");
@@ -11,6 +12,8 @@ const AddPostForm = ({ onAddPost }) => {
       onAddPost({ title, body });
       setTitle("");
       setBody("");
+    } else {
+      toast.error("Please fill in all fields");
     }
   };
 
